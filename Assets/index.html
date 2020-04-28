@@ -17,10 +17,12 @@
       <div class="jumbotron">
         <h1 class="display-4 text-center">Coding Quiz Challenge</h1>
           <p class="lead text-center">Try to answer the following code-related questions within the time limit. Keep in mind that incorrect answers will penalize your score/time by ten seconds!
-        </p>
-        <div class="row justify-content-center">
+          </p>
+          <div class="row justify-content-center">
           <button class="btn btn-primary" id="startQuiz">Start Quiz</button>
+          </div>
         </div>
+      </div>
     </div>
       
     <!-- quiz -->
@@ -90,7 +92,7 @@
     integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
   <script>
 
-    const quizQuestions = [
+    let quizQuestions = [
       {
         questions: 'The condition in an if/else statement  is enclosed within ______.',
         choice1: 'quotes',
@@ -145,12 +147,12 @@
     let button4 = document.getElementById('choice4')
     let resultEl = document.getElementById('result')
 
-    let gameOverPageEl = document.getElementById('gameOverPage')
+    // let gameOverPageEl = document.getElementById('gameOverPage')
     let finalScore = document.getElementById('score')
     let inputInitials = document.getElementById('initials')
     let submitBtn = document.getElementById('submit')
 
-    let highscoreList = document.getElementById('highscorePage')
+    // let highscoreList = document.getElementById('highscorePage')
     let highscoreInitialList = document.getElementById('highscoreInitial')
     let highscoreScoreList = document.getElementById('highscoreScore')
     let finishQuiz = document.getElementById('endGameBtns')
@@ -159,16 +161,20 @@
 
     let finalQuestionIndex = quizQuestions.length
     let currentQuestionIndex = 0
-    let count = 75
-    let score = 0
+    let score = 50
+    let startTimer
+    let correct
 
     // GIVEN I am taking a code quiz
     // WHEN I click the start button
     // THEN a timer starts and I am presented with a question
 
-    const generateQuestions = () => {
+    function generateQuestions() {
       // hides the gameover page display
       gameOverPageEl.style.display = 'none'
+      if (currentQuestionIndex === finalQuestionIndex) {
+        return showScore()
+      }
       let currentQuestion = quizQuestions[currentQuestionIndex]
       questionsEl.innerHTML = '<p>' + currentQuestion.questions + '<p>'
       button1.innerHTML = currentQuestion.choice1
@@ -177,18 +183,18 @@
       button4.innerHTML = currentQuestion.choice4
     }
 
-    const startQuiz = () => {
+    function startCodeQuiz() {
       // hide the gameover and home page display
       gameOverPageEl.style.display = 'none'
       homePage.style.display = 'none'
       // start the quiz questions
       generateQuestions()
       // start the timer
-      const startTimer = setInterval(() => {
-        count--
-        timer.textContent = 'Time: ' + count
+      startTimer = setInterval(() => {
+        score--
+        timer.textContent = 'Time: ' + score
         // when timer gets to 0, clear the time and show the score
-        if (count === 0) {
+        if (score === 0) {
           clearInterval(startTimer)
           showScore()
         }  
@@ -197,7 +203,7 @@
       quizPageEl.style.display = 'block'
     }
 
-    const showScore = () => {
+    function showScore() {
       // hide the content of the quiz page
       quizPageEl.style.display = 'none'
       // show the content of the game over page
@@ -205,15 +211,86 @@
       // clear timer
       clearInterval(startTimer)
       // show score
-      finalScore.innerHTML = 'You got' + score + 'out of' + quizQuestions.length
-      // input your initial
-      inputInitials.value = ''
+      finalScore.innerHTML = 'You got' + score
     }
 
-    submitBtn.addEventListener('click', highscore() => {
-
+    // when I click submit button run the following function
+    submitBtn.addEventListener('click', function highscore() {
+      // if initial is blank alert and return
+       if (inputInitials.value === '') {
+        alert('Input your initials')
+        return false;
+      } else {
+        let savedScores = JSON.parse(localStorage.getItem('savedScores')) || []
+        let currentUser = inputInitials.value.trim()
+        let currentScore = {
+          name: currentUser,
+          score: score
+        }
+        gameOverPageEl.style.display = 'none'
+        highscoreList.style.display = 'block'
+        savedScores.push(currentScore)
+        localStorage.setItem('savedScores', JSON.stringify('savedScores'))
+        generateHighscores()
+      }
     })
-    
+
+    function generateHighscores() {
+      highscoreInitialList.innerHTML = ''
+      highscoreScoreList.innerHTML = ''
+      let highscores = JSON.parse(localStorage.getItem(savedScores)) || []
+      for (let i = 0; i < highscores.length; i++) {
+        let newInitial = document.createElement('li')
+        let newScore = document.createElement('li')
+        newInitial.textContent = highscores[i].name
+        newInitial.textContent = highscores[i].score
+        highscoreInitialList.appendChild(newInitial)
+        highscoreScoreList.appendChild(newScore)
+      }
+    }
+
+    functin showHighscore() {
+      homePage.style.display = 'none'
+      quizPageEl.style.display = 'none'
+      gameOverPageEl.style.display = 'none'
+      highscoreList.style.display = 'block'
+
+      generateHighscores()
+    }
+
+    const clearScore = () => {
+      window.localStorage.clear()
+      highscoreInitialList.textContent = ''
+      highscoreScoreList.textContent = ''
+    }
+
+    const replayQuiz = () => {
+      highscoreList.style.display = 'none'
+      gameOverPageEl.style.display = 'none'
+      quizPageEl.style.display = 'block'
+      startTimer = 75
+      score = 75
+      currentQuestionIndex = 0
+    }
+
+    const checkAnswer = (answer) => {
+      let correct = quizQuestions[currentQuestionIndex].correctAnswer
+      if (answer === correct) {
+        alert('Correct!')
+        currentQuestionIndex++
+        generateQuestions()
+      } else if (answer !== correct) {
+        score-10
+        alert('WRONG!')
+        currentQuestionIndex++
+        generateQuestions()
+      } else {
+        showScore()
+      }
+    }
+
+    startBtn.addEventListener('click',startCodeQuiz)
+
     // WHEN I answer a question
     // THEN I am presented with another question
     // WHEN I answer a question incorrectly
@@ -223,10 +300,6 @@
     // THEN the game is over
     // WHEN the game is over
     // THEN I can save my initials and score
-
-    
-
-    document.getElementById('startQuiz').addEventListener("click", startQuiz)
 
   </script>
 </body>
